@@ -1,0 +1,39 @@
+  @import "tailwindcss";
+
+  @theme {
+    --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Newsreader", Georgia, serif;
+
+    --color-paper: #f2f5f2;
+    --color-card: #ffffff;
+    --color-ink: #14221c;
+    --color-muted: #4a5b52;
+    --color-line: #cdd7d0;
+
+    --color-water: #1c5aa6;   /* irrigate */
+    --color-wait: #a56608;    /* delay */
+    --color-field: #1f6a4d;   /* don't irrigate */
+    --color-clay: #8a4f26;    /* dry soil / "dry tomorrow" */
+    --color-sky: #e4edf5;
+  }
+
+  html { scroll-behavior: smooth; }
+  html, body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-sans); }
+
+  @keyframes fall {
+    0%   { transform: translateY(-14px); opacity: 0; }
+    20%  { opacity: 0.9; }
+    100% { transform: translateY(70px); opacity: 0; }
+  }
+  .drop { animation: fall 1.1s linear infinite; }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-1.2deg); }
+    50%      { transform: rotate(1.2deg); }
+  }
+  .cane { transform-origin: bottom center; transform-box: fill-box; animation: sway 4s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
