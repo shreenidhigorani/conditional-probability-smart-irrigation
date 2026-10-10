@@ -1,0 +1,8 @@
+quantity,value
+N,20
+n(Dry),19
+n(None),18
+n(Dry and None),18
+n(Dry and next Dry),18
+n(Dry and Light),1
+n(Dry and Light and next Dry),1

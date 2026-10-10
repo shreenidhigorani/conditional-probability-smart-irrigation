@@ -1,0 +1,10 @@
+soil_cat,rain_cat,reason
+Dry,None,"P(Dry tomorrow) = 0.998 is at least the upper limit 0.750, and at or above the break-even threshold 0.333, so irrigation is clearly worthwhile."
+Dry,Light,"P(Dry tomorrow) = 0.848 is at least the upper limit 0.750, and at or above the break-even threshold 0.333, so irrigation is clearly worthwhile."
+Dry,Heavy,"No matching days in the dataset (n = 0), so P(Dry tomorrow) is undefined; no decision can be made from this combination. WARNING: low support (n = 0 < 10)."
+Moderate,None,P(Dry tomorrow) = 0.017 is below the threshold 0.333; expected stress cost (3 x 0.017 = 0.050) is less than the irrigation cost (1).
+Moderate,Light,P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).
+Moderate,Heavy,P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).
+Wet,None,P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).
+Wet,Light,P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).
+Wet,Heavy,P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).

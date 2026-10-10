@@ -1,0 +1,404 @@
+
+======================================================================
+A1. LOAD AND INSPECT
+======================================================================
+Using file: /home/claude/work/repo/data/g6_irrigation_data.csv
+Shape (rows, columns): (1460, 6)
+Date range: 2022-01-01 to 2025-12-30
+
+Column names and types:
+date             datetime64[us]
+rain_mm                 float64
+soil_wetness            float64
+rain_cat                    str
+soil_cat                    str
+soil_next_dry             int64
+dtype: object
+
+First 5 rows:
+        date  rain_mm  soil_wetness rain_cat  soil_cat  soil_next_dry
+0 2022-01-01      0.0          0.64     None  Moderate              0
+1 2022-01-02      0.0          0.63     None  Moderate              0
+2 2022-01-03      0.0          0.63     None  Moderate              0
+3 2022-01-04      0.0          0.63     None  Moderate              0
+4 2022-01-05      0.0          0.62     None  Moderate              0
+
+Missing values per column (after reading 'None' correctly):
+date             0
+rain_mm          0
+soil_wetness     0
+rain_cat         0
+soil_cat         0
+soil_next_dry    0
+dtype: int64
+
+For comparison, a plain pd.read_csv() would report 993 missing values in rain_cat - these are all the 'None' (no rain) days.
+(Member 4: load the CSV with keep_default_na=False, otherwise 'None' becomes NaN.)
+
+rain_cat counts :
+ rain_cat
+None     993
+Light    327
+Heavy    140
+Name: count, dtype: int64
+
+soil_cat counts :
+ soil_cat
+Dry         499
+Moderate    485
+Wet         476
+Name: count, dtype: int64
+
+Rainfall range (mm) inside each rain_cat:
+          count    min    max
+rain_cat                     
+None        993   0.00   2.49
+Light       327   2.50  15.31
+Heavy       140  15.53  94.61
+
+soil_wetness range inside each soil_cat (shows the tertile cut points):
+          count   min   max
+soil_cat                   
+Dry         499  0.50  0.53
+Moderate    485  0.54  0.81
+Wet         476  0.82  0.99
+
+Soil tertile cut points recomputed from soil_wetness: 1/3 quantile = 0.5300, 2/3 quantile = 0.8100
+soil_cat matches the tertile rule for every row.
+Because soil_wetness has only 2 decimals, many days tie at a cut point, so the three classes are
+close to, but not exactly, one third each: {'Dry': 34.2, 'Moderate': 33.2, 'Wet': 32.6} (% of days)
+Rain boundary rows exactly on 2.5 mm or 15.5 mm: [{'date': '2022-07-31', 'rain_mm': 2.5, 'rain_cat': 'Light'}]
+Days above 64.4 mm (the guide quotes IMD 'Heavy' as 64.5-115.5 mm): 3; max rainfall = 94.61 mm
+-> the group's 'Heavy' class means '> 15.5 mm' and so also contains IMD 'Moderate' days (guide issue #1).
+
+Integrity checks passed: unique consecutive dates; rain_cat follows the guide rule (None < 2.5, Light 2.5-15.5, Heavy > 15.5); soil_cat follows the tertile rule; soil_next_dry = (tomorrow's soil_cat == Dry) for every row except the last.
+(The last row's soil_next_dry cannot be re-checked here because its 'tomorrow' (31 Dec 2025) is not in the file.)
+Rows with any missing value: 0
+
+======================================================================
+A2. OBSERVED FREQUENCY TABLE
+======================================================================
+soil_cat      Dry  Moderate  Wet  Row total
+rain_cat                                   
+None          466       360  167        993
+Light          33        93  201        327
+Heavy           0        32  108        140
+Column total  499       485  476       1460
+
+Row percentages (within each rain category, % of days in each soil class):
+soil_cat   Dry  Moderate   Wet
+rain_cat                      
+None      46.9      36.3  16.8
+Light     10.1      28.4  61.5
+Heavy      0.0      22.9  77.1
+
+======================================================================
+A3. EXPECTED FREQUENCIES (by hand formula)
+======================================================================
+E = (row total x column total) / grand total
+soil_cat     Dry  Moderate     Wet
+rain_cat                          
+None      339.39    329.87  323.75
+Light     111.76    108.63  106.61
+Heavy      47.85     46.51   45.64
+
+======================================================================
+A3b. JOINT PROBABILITY vs P(S) x P(R)
+======================================================================
+Joint P(S and R):
+ soil_cat     Dry  Moderate     Wet
+rain_cat                          
+None      0.3192    0.2466  0.1144
+Light     0.0226    0.0637  0.1377
+Heavy     0.0000    0.0219  0.0740
+
+P(R):
+ rain_cat
+None     0.6801
+Light    0.2240
+Heavy    0.0959
+
+P(S):
+ soil_cat
+Dry         0.3418
+Moderate    0.3322
+Wet         0.3260
+
+Product P(S) x P(R) (what the joint would be if independent):
+ soil_cat     Dry  Moderate     Wet
+rain_cat                          
+None      0.2325    0.2259  0.2217
+Light     0.0765    0.0744  0.0730
+Heavy     0.0328    0.0319  0.0313
+
+Difference  P(S and R) - P(S)P(R)  (0 everywhere would mean independence):
+ soil_cat     Dry  Moderate     Wet
+rain_cat                          
+None      0.0867    0.0206 -0.1074
+Light    -0.0539   -0.0107  0.0647
+Heavy    -0.0328   -0.0099  0.0427
+
+All nine combinations in one table:
+rain_cat soil_cat  count  P(S and R)   P(S)   P(R)  P(S) x P(R)  difference
+    None      Dry    466      0.3192 0.3418 0.6801       0.2325      0.0867
+    None Moderate    360      0.2466 0.3322 0.6801       0.2259      0.0206
+    None      Wet    167      0.1144 0.3260 0.6801       0.2217     -0.1074
+   Light      Dry     33      0.0226 0.3418 0.2240       0.0765     -0.0539
+   Light Moderate     93      0.0637 0.3322 0.2240       0.0744     -0.0107
+   Light      Wet    201      0.1377 0.3260 0.2240       0.0730      0.0647
+   Heavy      Dry      0      0.0000 0.3418 0.0959       0.0328     -0.0328
+   Heavy Moderate     32      0.0219 0.3322 0.0959       0.0319     -0.0099
+   Heavy      Wet    108      0.0740 0.3260 0.0959       0.0313      0.0427
+
+======================================================================
+A4. HYPOTHESES
+======================================================================
+H0: rain_cat and soil_cat are independent (rain category does not
+    change the distribution of soil-moisture category).
+H1: rain_cat and soil_cat are NOT independent (they are associated).
+Significance level: alpha = 0.05
+
+======================================================================
+A5. CHI-SQUARE TEST OF INDEPENDENCE (scipy.stats.chi2_contingency)
+======================================================================
+Chi-square statistic : 404.7609
+Degrees of freedom   : 4   (= (3-1) x (3-1))
+p-value              : 2.6037e-86
+Significance level   : alpha = 0.05
+
+Expected table from scipy:
+soil_cat     Dry  Moderate     Wet
+rain_cat                          
+None      339.39    329.87  323.75
+Light     111.76    108.63  106.61
+Heavy      47.85     46.51   45.64
+
+Same as my hand calculation? True
+Manual chi-square = sum((O-E)^2/E) = 404.7609
+
+Decision at alpha=0.05: REJECT H0
+Cramer's V (effect size) = 0.372
+
+Standardised residuals (|value| > 2 means that cell differs a lot from independence):
+soil_cat   Dry  Moderate   Wet
+rain_cat                      
+None      6.87      1.66 -8.71
+Light    -7.45     -1.50  9.14
+Heavy    -6.92     -2.13  9.23
+
+======================================================================
+A6. ASSUMPTION CHECKS
+======================================================================
+1) Expected counts: smallest = 45.64; cells with E<5 = 0%
+   Rule of thumb: all E >= 5 (or at most 20% of cells below 5, none below 1). -> OK
+2) Categories are mutually exclusive and exhaustive: each day has exactly one rain_cat and one soil_cat -> OK
+3) Counts (not percentages) used, n = 1460 days ->  OK
+4) Independence of observations: this is the weak point (see A7).
+
+======================================================================
+A7. TEMPORAL DEPENDENCE (days are not independent samples)
+======================================================================
+Lag-1 autocorrelation of soil_wetness  : 0.999
+Lag-1 autocorrelation of rain_mm       : 0.702
+
+Soil class unchanged from one day to the next: 98.1% of days
+(if days were independent with 3 equal classes, we'd expect about 33%)
+
+By calendar month (all years pooled): rain total and mean soil wetness (shows the shared monsoon season cycle):
+month                         1        2        3        4        5         6         7         8        9        10       11       12
+n_days                   124.000  113.000  124.000  120.000  124.000   120.000   124.000   124.000  120.000  124.000  120.000  123.000
+total_rain_mm_all_years    2.920    0.030   15.210  108.890  467.910  1053.950  2233.880  1129.380  870.710  604.700   58.320    7.490
+mean_rain_mm_per_day       0.024    0.000    0.123    0.907    3.773     8.783    18.015     9.108    7.256    4.877    0.486    0.061
+mean_soil_wetness          0.557    0.513    0.502    0.510    0.545     0.666     0.878     0.925    0.897    0.873    0.761    0.632
+
+fast_chi2 (used for resampling) equals scipy's chi-square on the real data: OK
+
+Circular-shift permutation test: 1400 distinct shifts (30 to 1429 days), all of them used
+  Real chi-square = 404.76
+  Shifts with chi-square >= real: 487 of 1400
+  Median / 95th percentile of shifted chi-squares = 296.53 / 581.31
+  Permutation p-value = (487 + 1) / (1400 + 1) = 0.3483
+
+Sensitivity (shifts at least 90 days away from a whole number of years): 742 shifts, 254 reached the real chi-square, p = (254 + 1) / (742 + 1) = 0.3432
+  Median shifted chi-square for the shifts near a whole year (< 90 days away): 305.08; for the far shifts: 289.01
+  Interpretation limits:
+  - The circular shift keeps both series' own autocorrelation, so it is a fairer null than a
+    plain shuffle, but the soil and rain series also share a yearly monsoon cycle. A shift near
+    a whole year keeps that cycle aligned, which makes the shifted chi-squares large and the
+    p-value conservative (large). So a non-significant permutation p-value means the data cannot
+    separate the rain-soil link from shared seasonality in this short 4-year record; it does NOT
+    show the variables are unrelated, and a small p-value would not prove causation either.
+  - It is exploratory, not a definitive test: only 4 seasonal cycles are available.
+
+Monte Carlo (random shuffle, 10000 times, seed 7): 0 shuffles reached the real chi-square
+  p-value = (0 + 1) / (10000 + 1) = 0.000100  (smallest possible with 10000 shuffles is 0.000100; read a value at that floor as 'p < about 0.0001')
+
+Chi-square inside each calendar year (same test, one year at a time):
+ year  n_days  chi2  dof   p_value  cramers_v  min_expected_count  pct_cells_expected_below_5
+ 2022     365 95.39    4 9.419e-20     0.3615               9.833                           0
+ 2023     365 68.31    4 5.153e-14     0.3059               3.918                       11.11
+ 2024     366 122.2    4 1.822e-25     0.4086               11.04                           0
+ 2025     364   116    4 3.731e-24     0.3993               9.621                           0
+Years with expected counts < 5 in some cells should be read with care.
+
+======================================================================
+A8. GRAPHS
+======================================================================
+Saved graphs 1-4 in /home/claude/work/repo/results
+
+======================================================================
+A9. ASSOCIATION VS CAUSATION
+======================================================================
+The test shows rain_cat and soil_cat are statistically associated.
+It does not prove that rain alone causes soil to be wetter: season (monsoon),
+temperature, humidity, evaporation and soil memory all move together with rain.
+
+>>> PART A COMPLETE <<<
+
+======================================================================
+B1. PREPARE DATA FOR PART B
+======================================================================
+Rows before exclusion: 1460
+Rows with soil_next_dry missing (excluded): 0
+Rows used in Part B: 1460
+Overall P(soil_next_dry = 1) = 0.3418
+Self-test passed: a row with a missing next-day outcome is excluded.
+
+======================================================================
+B2. EXPECTED-COST DERIVATION OF THE THRESHOLD
+======================================================================
+Irrigate today      -> cost = c_irr (for sure)
+Do not irrigate     -> cost = p x c_stress on average (stress happens only if soil is Dry tomorrow)
+Irrigate is better when  c_irr < p x c_stress,  i.e.  p > t = c_irr / c_stress
+Decision bands (src/decision.py): p >= upper = max(0.75, t) IRRIGATE NOW; t <= p < upper DELAY & RE-CHECK; p < t DON'T IRRIGATE.
+
+======================================================================
+B3. THREE REQUIRED CONDITIONS (c_irr = 1, c_stress = 3, t = 1/3)
+======================================================================
+
+Condition: soil_cat = Dry, rain_cat = None
+  valid observations (days) : 466
+  next-day Dry outcomes     : 465
+  p_dry_tomorrow            : 0.9979
+  95% Wilson interval       : (0.9879, 0.9996)
+  threshold                 : 0.3333
+  decision                  : IRRIGATE NOW
+  reason                    : P(Dry tomorrow) = 0.998 is at least the upper limit 0.750, and at or above the break-even threshold 0.333, so irrigation is clearly worthwhile.
+
+Condition: soil_cat = Moderate, rain_cat = Light
+  valid observations (days) : 93
+  next-day Dry outcomes     : 0
+  p_dry_tomorrow            : 0.0
+  95% Wilson interval       : (0.0, 0.0397)
+  threshold                 : 0.3333
+  decision                  : DON'T IRRIGATE
+  reason                    : P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).
+
+Condition: soil_cat = Wet, rain_cat = Heavy
+  valid observations (days) : 108
+  next-day Dry outcomes     : 0
+  p_dry_tomorrow            : 0.0
+  95% Wilson interval       : (0.0, 0.0343)
+  threshold                 : 0.3333
+  decision                  : DON'T IRRIGATE
+  reason                    : P(Dry tomorrow) = 0.000 is below the threshold 0.333; expected stress cost (3 x 0.000 = 0.000) is less than the irrigation cost (1).
+
+Summary table:
+soil_cat rain_cat  n_days  n_next_day_dry  p_dry_tomorrow  threshold       decision
+     Dry     None     466             465          0.9979     0.3333   IRRIGATE NOW
+Moderate    Light      93               0          0.0000     0.3333 DON'T IRRIGATE
+     Wet    Heavy     108               0          0.0000     0.3333 DON'T IRRIGATE
+
+======================================================================
+B4. SAME CONDITIONS WITH DIFFERENT COSTS (c_irr = 2, c_stress = 3, t = 2/3)
+======================================================================
+soil_cat rain_cat  n_days  n_next_day_dry  p_dry_tomorrow  threshold       decision
+     Dry     None     466             465          0.9979     0.6667   IRRIGATE NOW
+Moderate    Light      93               0          0.0000     0.6667 DON'T IRRIGATE
+     Wet    Heavy     108               0          0.0000     0.6667 DON'T IRRIGATE
+
+Did the decision change when t moved from 1/3 to 2/3?
+soil_cat rain_cat decision_t_1/3 decision_t_2/3  changed
+     Dry     None   IRRIGATE NOW   IRRIGATE NOW    False
+Moderate    Light DON'T IRRIGATE DON'T IRRIGATE    False
+     Wet    Heavy DON'T IRRIGATE DON'T IRRIGATE    False
+-> No decision changed. Observed probabilities: Dry+None: p = 0.9979, Moderate+Light: p = 0.0000, Wet+Heavy: p = 0.0000.
+   None of them lies between t = 1/3 and t = 2/3 (the only region where the two cost settings
+   disagree), so the cost change does not alter these three decisions. This is an honest result.
+
+HYPOTHETICAL illustration only (p = 0.50 is NOT a data result): how the cost ratio moves the decision
+  p = 0.50, c_irr = 1, c_stress = 3: t = 0.3333 -> DELAY & RE-CHECK
+  p = 0.50, c_irr = 2, c_stress = 3: t = 0.6667 -> DON'T IRRIGATE
+
+======================================================================
+B5. ALL 9 SOIL x RAIN COMBINATIONS (both cost settings, low-support flag)
+======================================================================
+soil_cat rain_cat  n_days  n_next_day_dry  p_dry_tomorrow       decision decision_c_irr2_c_stress3  decision_changed_by_cost  low_support  p_dry_given_soil_only fallback_decision_soil_only_NOT_APPROVED
+     Dry     None     466             465          0.9979   IRRIGATE NOW              IRRIGATE NOW                     False        False                 0.9880                                         
+     Dry    Light      33              28          0.8485   IRRIGATE NOW              IRRIGATE NOW                     False        False                 0.9880                                         
+     Dry    Heavy       0               0             NaN        NO DATA                   NO DATA                     False         True                 0.9880                             IRRIGATE NOW
+Moderate     None     360               6          0.0167 DON'T IRRIGATE            DON'T IRRIGATE                     False        False                 0.0124                                         
+Moderate    Light      93               0          0.0000 DON'T IRRIGATE            DON'T IRRIGATE                     False        False                 0.0124                                         
+Moderate    Heavy      32               0          0.0000 DON'T IRRIGATE            DON'T IRRIGATE                     False        False                 0.0124                                         
+     Wet     None     167               0          0.0000 DON'T IRRIGATE            DON'T IRRIGATE                     False        False                 0.0000                                         
+     Wet    Light     201               0          0.0000 DON'T IRRIGATE            DON'T IRRIGATE                     False        False                 0.0000                                         
+     Wet    Heavy     108               0          0.0000 DON'T IRRIGATE            DON'T IRRIGATE                     False        False                 0.0000                                         
+
+Cells with fewer than 10 days (low support): 1
+  *** LOW-SUPPORT WARNING: Dry + Heavy has only 0 matching days -> decision = NO DATA. Reference only (guide issue #3, not approved): P(dry tomorrow | Dry only) = 0.988 would give IRRIGATE NOW.
+Cells whose decision changes between (1,3) and (2,3): 0
+
+======================================================================
+B6. DOES RAIN ADD ANYTHING BEYOND TODAY'S SOIL? (persistence check)
+======================================================================
+soil_cat  n_soil_only  P_dry_tomorrow_given_soil  P_given_soil_and_None  n_None  P_given_soil_and_Light  n_Light  P_given_soil_and_Heavy  n_Heavy
+     Dry          499                     0.9880                 0.9979     466                  0.8485       33                     NaN        0
+Moderate          485                     0.0124                 0.0167     360                  0.0000       93                     0.0       32
+     Wet          476                     0.0000                 0.0000     167                  0.0000      201                     0.0      108
+If P(soil and rain) is close to P(soil only), today's soil already carries most of the
+information, because today's soil state already contains today's rain.
+
+======================================================================
+B6b. WORKED EXAMPLE FROM 20 CONSECUTIVE ROWS (demonstration only)
+======================================================================
+      date  rain_mm  soil_wetness rain_cat soil_cat  soil_next_dry
+2022-04-30     0.00          0.52     None      Dry              1
+2022-05-01     0.00          0.51     None      Dry              1
+2022-05-02     0.00          0.51     None      Dry              1
+2022-05-03     0.00          0.51     None      Dry              1
+2022-05-04     0.25          0.51     None      Dry              1
+2022-05-05     0.06          0.51     None      Dry              1
+2022-05-06     0.08          0.51     None      Dry              1
+2022-05-07     0.00          0.51     None      Dry              1
+2022-05-08     0.00          0.51     None      Dry              1
+2022-05-09     0.00          0.51     None      Dry              1
+2022-05-10     0.00          0.51     None      Dry              1
+2022-05-11     1.16          0.51     None      Dry              1
+2022-05-12     1.74          0.51     None      Dry              1
+2022-05-13     1.63          0.51     None      Dry              1
+2022-05-14     0.04          0.51     None      Dry              1
+2022-05-15     0.02          0.51     None      Dry              1
+2022-05-16     0.02          0.51     None      Dry              1
+2022-05-17     2.99          0.51    Light      Dry              1
+2022-05-18     1.90          0.52     None      Dry              0
+2022-05-19    39.51          0.56    Heavy Moderate              0
+
+N = 20 rows (2022-04-30 to 2022-05-19)
+n(Dry) = 19;  n(None) = 18;  n(Dry and None) = 18
+P(S=Dry) = 19/20 = 0.9500;  P(R=None) = 18/20 = 0.9000
+P(Dry and None) = 18/20 = 0.9000;  P(Dry) x P(None) = 0.8550   (equal would mean independent in this tiny sample)
+P(soil_next_dry=1 | Dry) = n(Dry and next Dry) / n(Dry) = 18/19 = 0.9474
+P(soil_next_dry=1 | Dry, Light) = 1/1 = 1.0000
+(20 rows are for demonstration only; the main tables use all rows.)
+
+======================================================================
+B7. GRAPH
+======================================================================
+Saved graph5_partB_decisions.png
+
+======================================================================
+DONE
+======================================================================
+All outputs are in the folder: /home/claude/work/repo/results
+Note: the decision rule is an exploratory statistical exercise on one location's
+data, not a validated agricultural recommendation.

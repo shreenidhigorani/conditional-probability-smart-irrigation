@@ -1,0 +1,10 @@
+soil_cat,rain_cat,n_days,n_next_day_dry,p_dry_tomorrow,threshold,decision,n,low_support,ci95_low,ci95_high,decision_c_irr2_c_stress3,decision_changed_by_cost,n_soil_only,p_dry_given_soil_only,fallback_decision_soil_only_NOT_APPROVED
+Dry,None,466,465,0.9979,0.3333,IRRIGATE NOW,466,False,0.9879,0.9996,IRRIGATE NOW,False,499,0.988,
+Dry,Light,33,28,0.8485,0.3333,IRRIGATE NOW,33,False,0.6908,0.9335,IRRIGATE NOW,False,499,0.988,
+Dry,Heavy,0,0,,0.3333,NO DATA,0,True,,,NO DATA,False,499,0.988,IRRIGATE NOW
+Moderate,None,360,6,0.0167,0.3333,DON'T IRRIGATE,360,False,0.0077,0.0359,DON'T IRRIGATE,False,485,0.0124,
+Moderate,Light,93,0,0.0,0.3333,DON'T IRRIGATE,93,False,0.0,0.0397,DON'T IRRIGATE,False,485,0.0124,
+Moderate,Heavy,32,0,0.0,0.3333,DON'T IRRIGATE,32,False,0.0,0.1072,DON'T IRRIGATE,False,485,0.0124,
+Wet,None,167,0,0.0,0.3333,DON'T IRRIGATE,167,False,0.0,0.0225,DON'T IRRIGATE,False,476,0.0,
+Wet,Light,201,0,0.0,0.3333,DON'T IRRIGATE,201,False,0.0,0.0188,DON'T IRRIGATE,False,476,0.0,
+Wet,Heavy,108,0,0.0,0.3333,DON'T IRRIGATE,108,False,0.0,0.0343,DON'T IRRIGATE,False,476,0.0,

@@ -1,0 +1,9 @@
+statistic,value
+chi2,404.7609202615113
+dof,4.0
+p_value,2.6037072101120707e-86
+alpha,0.05
+cramers_v,0.3723127093106226
+n,1460.0
+min_expected_count,45.64383561643836
+pct_cells_expected_below_5,0.0

@@ -1,0 +1,5 @@
+test,p_value,n_resamples,random_seed,treats_days_as_independent
+chi-square (scipy),2.6037072101120707e-86,,,True
+Monte Carlo shuffle,9.999000099990002e-05,10000.0,7.0,True
+"circular-shift permutation (exhaustive, all shifts)",0.3483226266952177,1400.0,,False
+circular-shift permutation (shifts >= 90 days from a whole year),0.34320323014804843,742.0,,False
