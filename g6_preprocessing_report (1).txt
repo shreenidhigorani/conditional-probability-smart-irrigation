@@ -1,0 +1,88 @@
+IRRIGAI — MEMBER 1 DATA & PREPROCESSING REPORT
+Student role: Member 1 — Data Architecture & Preprocessing
+
+1. Purpose
+The purpose of this stage is to prepare a consistent daily dataset for the IrrigAI
+conditional-probability and irrigation-decision analysis. The shared column names
+are kept unchanged so the other group members can use the same file.
+
+2. Required data source and variables
+The project guide specifies NASA POWER daily data for Kolhapur, Maharashtra
+(approximately 16.705° N, 74.243° E), from 1 January 2022 to 31 December 2025,
+using the AG community and the variables PRECTOTCORR and GWETROOT.
+
+PRECTOTCORR represents corrected precipitation (rainfall) in mm/day.
+GWETROOT represents modelled root-zone soil wetness on a 0–1 scale. It is a
+model output, not a direct soil sensor measurement.
+
+Important provenance note: the prepared CSV by itself does not prove which NASA
+POWER endpoint or variables produced its values. Keep the original NASA POWER
+download or API request/response as evidence of the source before final submission.
+
+3. Dataset structure
+The prepared file is named g6_irrigation_data.csv and uses these columns:
+
+- date: daily date.
+- rain_mm: daily rainfall in millimetres.
+- soil_wetness: root-zone soil wetness value.
+- rain_cat: rainfall category (None, Light, Heavy).
+- soil_cat: soil category (Dry, Moderate, Wet).
+- soil_next_dry: 1 if the following day's soil category is Dry; otherwise 0.
+
+The supplied CSV contains 1,460 rows, dated 2022-01-01 through 2025-12-30.
+The expected 1,461 source dates would cover 2022-01-01 through 2025-12-31.
+The final source row is normally removed because it has no following day from
+which to create soil_next_dry. Confirm that the source download originally
+contained the complete date range.
+
+4. Preprocessing rules
+Rainfall categories follow the project guide:
+- None: rainfall < 2.5 mm.
+- Light: rainfall from 2.5 mm through 15.5 mm.
+- Heavy: rainfall > 15.5 mm.
+
+Soil categories are intended to be formed from the one-third and two-thirds
+quantiles (tertiles) of soil_wetness, producing Dry, Moderate and Wet groups.
+Record the actual quantile cutoffs from the original preprocessing run in the
+final submission; they cannot be reliably reconstructed from the prepared CSV
+alone if the original category assignment method is uncertain.
+
+The target soil_next_dry is a next-day label: it equals 1 when the next day's
+soil_cat is Dry, and 0 otherwise. The final date in the raw series must be removed
+when this target is generated because no next-day label is available for it.
+
+5. Validation performed by the accompanying script
+The script checks that all six required columns exist, converts date and numeric
+columns to appropriate types, fills missing rain_cat values using rain_mm and the
+specified thresholds, checks for category mismatches, checks target values are
+0 or 1, checks for missing required values and duplicate dates, sorts by date,
+prints category/frequency tables, and saves the corrected CSV.
+
+6. Important limitation
+The script supplied with this report starts from the already-prepared CSV. It
+repairs and validates that file; it does not download data from NASA POWER or
+recalculate soil tertiles and soil_next_dry from the original raw data. To make
+the full process reproducible, preserve the raw NASA POWER download and document
+the exact API request or Data Access Viewer settings.
+
+7. Limitations to mention
+- GWETROOT is modelled soil wetness, not a field sensor reading.
+- NASA POWER data are gridded and may not represent conditions in one particular
+  farm plot exactly.
+- The analysis covers four years and rainfall has strong seasonal/monsoon patterns.
+- Tertile-based categories are relative to this dataset.
+- Daily observations can be autocorrelated.
+- Rainfall category boundaries are project choices, not universal irrigation
+  thresholds.
+
+8. Handoff to the group
+Share the same final g6_irrigation_data.csv with Members 2, 3, 4 and 6.
+The column names must remain exactly:
+date, rain_mm, soil_wetness, rain_cat, soil_cat, soil_next_dry.
+Members 2 and 3 use these fields for probabilities and independence/decision
+analysis; Member 4 uses the agreed probability and decision outputs in the demo;
+Member 6 uses the data and results for visualisation and the report.
+
+Status: The supplied CSV needs rain_cat blanks filled before analysis. The report
+should only claim NASA source verification after the original source download or
+API record has been checked.
