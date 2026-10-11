@@ -69,6 +69,23 @@ def tables():
     })
 
 
+@app.get("/timeseries")
+def timeseries():
+    """Daily soil wetness and rain for the timeline chart."""
+    d = DATA
+    dry_max = float(d.loc[d["soil_cat"] == "Dry", "soil_wetness"].max())
+    moderate_max = float(
+        d.loc[d["soil_cat"] == "Moderate", "soil_wetness"].max())
+    return jsonify({
+        "dates": d["date"].tolist(),
+        "soil_wetness": d["soil_wetness"].round(4).tolist(),
+        "rain_mm": d["rain_mm"].round(2).tolist(),
+        "rain_cat": d["rain_cat"].tolist(),
+        "dry_max": dry_max,
+        "moderate_max": moderate_max,
+    })
+
+
 @app.post("/predict")
 def predict():
     payload = request.get_json(silent=True) or {}
@@ -87,7 +104,8 @@ def predict():
     except (TypeError, ValueError):
         return jsonify({"error": "c_irr must be >= 0 and c_stress must be > 0"}), 400
 
-    row = DRY_TABLE[(DRY_TABLE["soil_cat"] == soil) & (DRY_TABLE["rain_cat"] == rain)].iloc[0]
+    row = DRY_TABLE[(DRY_TABLE["soil_cat"] == soil) &
+                    (DRY_TABLE["rain_cat"] == rain)].iloc[0]
     p = _clean_value(row["p_dry_tomorrow"])
     decision = irrigation_decision(p, c_irr, c_stress)
 

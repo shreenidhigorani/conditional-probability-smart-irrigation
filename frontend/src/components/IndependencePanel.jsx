@@ -8,8 +8,8 @@ export default function IndependencePanel({ info }) {
       {!info ? (
         <p className="mt-4 rounded bg-paper p-4 text-muted">The API did not send a chi-square result yet. Ask Member 4 to add an <code>independence</code> object to /tables.</p>
       ) : (
-        <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[["χ²", info.chi2], ["Degrees of freedom", info.df], ["p-value", info.p_value], ["Significance level", info.alpha ?? 0.05]].map(([k, v]) => (
+        <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
+          {[["χ²", info.chi2], ["Degrees of freedom", info.df], ["p-value", info.p_value], ["Significance level", info.alpha ?? 0.05], ["Cramér’s V", info.cramers_v]].map(([k, v]) => (
             <div key={k} className="rounded border border-line p-3"><dt className="text-sm text-muted">{k}</dt>
               <dd className="font-display text-3xl font-semibold tabular-nums">{typeof v === "number" ? Number(v.toPrecision(4)) : v ?? "–"}</dd></div>
           ))}

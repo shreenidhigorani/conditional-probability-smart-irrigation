@@ -27,6 +27,7 @@ export const DECISION_STYLE = {
   "IRRIGATE NOW": { bg: "bg-water", label: "Irrigate" },
   "DELAY & RE-CHECK": { bg: "bg-wait", label: "Wait" },
   "DON’T IRRIGATE": { bg: "bg-field", label: "Hold off" },
+  "INSUFFICIENT_DATA": { bg: "bg-muted", label: "No data" },
 };
 
 export function styleFor(decision) {

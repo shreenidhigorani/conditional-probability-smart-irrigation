@@ -28,7 +28,20 @@ export default function ResultPanel({ state }) {
         </div>
       )}
 
-      {status === "done" && data && (
+      {status === "done" && data && data.p_dry_tomorrow == null && (
+        <div className="mt-4">
+          <div className="rounded bg-muted p-5 text-white">
+            <p className="text-sm opacity-90">Decision</p>
+            <p className="font-display text-3xl font-semibold">Not enough data</p>
+          </div>
+          <p className="mt-4 text-lg">
+            No days in the dataset had {asked.soil} soil with {asked.rain} rain, so the probability is undefined
+            (not zero). Try a different condition.
+          </p>
+        </div>
+      )}
+
+      {status === "done" && data && data.p_dry_tomorrow != null && (
         <div className="mt-4">
           {data.mock && <p className="mb-3 inline-block rounded bg-wait px-2.5 py-1 text-sm font-semibold text-white">MOCK DATA: placeholder numbers, not from the dataset</p>}
           <div className={`rounded p-5 text-white ${styleFor(data.decision).bg}`}>
@@ -48,6 +61,7 @@ export default function ResultPanel({ state }) {
             <CostBalance p={data.p_dry_tomorrow} cIrr={asked.c_irr} cStress={asked.c_stress} />
           </div>
           <div className="mt-8"><ZoneGauge p={data.p_dry_tomorrow} threshold={Number(data.threshold)} /></div>
+          {data.warning && <p className="mt-4 text-sm text-muted">{data.warning}</p>}
         </div>
       )}
     </section>

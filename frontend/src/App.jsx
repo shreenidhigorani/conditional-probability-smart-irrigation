@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { predict, mockPredict, getTables, mockTables } from "./api";
+import { predict, mockPredict, getTables, mockTables, getTimeseries, mockTimeseries } from "./api";
 import useStages from "./hooks/useStages";
 import StageNav from "./components/StageNav";
 import Stage from "./components/Stage";
@@ -10,6 +10,8 @@ import Heatmap from "./components/Heatmap";
 import TablesPanel from "./components/TablesPanel";
 import IndependencePanel from "./components/IndependencePanel";
 import Footer from "./components/Footer";
+import SoilTimeline from "./components/SoilTimeline";
+import FigureGallery from "./components/FigureGallery";
 
 const card = "rounded-lg border border-line bg-card p-6";
 
@@ -19,6 +21,8 @@ export default function App() {
   const [state, setState] = useState({ status: "idle", data: null, error: null, asked: null });
   const [tables, setTables] = useState(null);
   const [tablesError, setTablesError] = useState(null);
+  const [series, setSeries] = useState(null);
+  const [seriesError, setSeriesError] = useState(null);
   const active = useStages();
 
   const cIrr = Number(form.c_irr);
@@ -32,6 +36,15 @@ export default function App() {
     catch (e) { setTables(null); setTablesError(e.message); }
   }, [mock]);
   useEffect(() => { loadTables(); }, [loadTables]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSeriesError(null);
+    (mock ? mockTimeseries() : getTimeseries())
+      .then((d) => !cancelled && setSeries(d))
+      .catch((e) => { if (!cancelled) { setSeries(null); setSeriesError(e.message); } });
+    return () => { cancelled = true; };
+  }, [mock]);
 
   async function check() {
     const payload = { soil: form.soil, rain: form.rain, c_irr: cIrr, c_stress: cStress };
@@ -62,6 +75,10 @@ export default function App() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <button type="button" onClick={() => go("decision")} className="rounded bg-ink px-6 py-3 text-lg font-semibold text-white focus-visible:ring-2 focus-visible:ring-water focus-visible:ring-offset-2">Try the live demo</button>
                 <button type="button" onClick={() => go("data")} className="rounded border border-ink px-6 py-3 text-lg font-semibold focus-visible:ring-2 focus-visible:ring-water">See the data</button>
+                <label className="flex cursor-pointer items-center gap-2 rounded border border-line bg-white px-4 py-3 text-base">
+                  <input type="checkbox" checked={mock} onChange={(e) => setMock(e.target.checked)} className="h-5 w-5" />
+                  Mock mode (backend not running)
+                </label>
               </div>
             </div>
             <div className="overflow-hidden rounded-lg border border-line bg-card">
@@ -121,8 +138,13 @@ export default function App() {
         <Stage id="evidence" index={4} title="Tables and independence test"
           intro="The full tables behind the result, and whether rain and soil category are statistically independent.">
           <div className="grid gap-6">
+            <section aria-labelledby="ts-h" className="rounded-lg border border-line bg-card p-6">
+              <h3 id="ts-h" className="font-display text-2xl font-semibold">Soil wetness, 2022 to 2025</h3>
+              <div className="mt-4"><SoilTimeline series={series} error={seriesError} /></div>
+            </section>
             <TablesPanel tables={tables} error={tablesError} onReload={loadTables} />
             <IndependencePanel info={tables?.independence} />
+            <FigureGallery />
           </div>
         </Stage>
 

@@ -1,5 +1,28 @@
+# Python
 .venv/
+venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+outputs/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Secrets
 .env
-frontend/node_modules/
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
