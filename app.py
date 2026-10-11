@@ -1,27 +1,35 @@
-"""Optional Flask API for the IrrigAI Probability Engine.
-
-POST /predict JSON: {"soil":"Dry","rain":"None","c_irr":2,"c_stress":10}
-GET /tables returns frequency/probability tables as JSON.
-"""
+"""Flask API for the IrrigAI Probability Engine."""
+import math
+import numpy as np
 from flask import Flask, jsonify, request
+from flask_cors import CORS
+from scipy.stats import chi2_contingency
 
 from probability import (
     SOIL_ORDER,
     RAIN_ORDER,
     build_probability_tables,
-    conditional_prob,
     dry_tomorrow_table,
     irrigation_decision,
     load_data,
 )
 
 app = Flask(__name__)
+CORS(app)
+
 DATA = load_data()
 DRY_TABLE = dry_tomorrow_table(DATA)
 
 
+def _clean_value(v):
+    if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+        return None
+    return v
+
+
 def _json_records(df):
-    return df.reset_index().where(df.reset_index().notna(), None).to_dict(orient="records")
+    records = df.reset_index().to_dict(orient="records")
+    return [{k: _clean_value(v) for k, v in r.items()} for r in records]
 
 
 @app.get("/health")
@@ -31,16 +39,33 @@ def health():
 
 @app.get("/tables")
 def tables():
-    tables = build_probability_tables(DATA)
+    tbls = build_probability_tables(DATA)
+
+    # Compute Chi-Square Independence Statistics
+    observed = tbls["counts"]
+    chi2, p_val, dof, expected = chi2_contingency(observed)
+    k = min(observed.shape) - 1
+    cramers_v = float(np.sqrt(chi2 / (len(DATA) * k)))
+
+    independence = {
+        "chi2": round(float(chi2), 4),
+        "p_value": float(p_val),
+        "dof": int(dof),
+        "cramers_v": round(cramers_v, 4),
+        "independent": bool(p_val >= 0.05),
+        "alpha": 0.05,
+    }
+
     return jsonify({
-        "counts": _json_records(tables["counts"]),
-        "joint": _json_records(tables["joint"].round(6)),
-        "marginal_soil": _json_records(tables["marginal_soil"].round(6)),
-        "marginal_rain": _json_records(tables["marginal_rain"].round(6)),
+        "counts": _json_records(tbls["counts"]),
+        "joint": _json_records(tbls["joint"].round(6)),
+        "marginal_soil": _json_records(tbls["marginal_soil"].round(6)),
+        "marginal_rain": _json_records(tbls["marginal_rain"].round(6)),
         "conditional": _json_records(DRY_TABLE.round(6)),
-        "conditional_soil_given_rain": _json_records(tables["soil_given_rain"].round(6)),
-        "conditional_rain_given_soil": _json_records(tables["rain_given_soil"].round(6)),
+        "conditional_soil_given_rain": _json_records(tbls["soil_given_rain"].round(6)),
+        "conditional_rain_given_soil": _json_records(tbls["rain_given_soil"].round(6)),
         "dry_tomorrow_by_soil_and_rain": _json_records(DRY_TABLE.round(6)),
+        "independence": independence,
     })
 
 
@@ -63,10 +88,9 @@ def predict():
         return jsonify({"error": "c_irr must be >= 0 and c_stress must be > 0"}), 400
 
     row = DRY_TABLE[(DRY_TABLE["soil_cat"] == soil) & (DRY_TABLE["rain_cat"] == rain)].iloc[0]
-    p = row["p_dry_tomorrow"]
-    if p is not None and p != p:  # NaN check
-        p = None
+    p = _clean_value(row["p_dry_tomorrow"])
     decision = irrigation_decision(p, c_irr, c_stress)
+
     return jsonify({
         "soil": soil,
         "rain": rain,
@@ -81,4 +105,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host="127.0.0.1", port=8000, debug=False)
