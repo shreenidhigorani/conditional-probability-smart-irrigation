@@ -1,7 +1,11 @@
 import { decide } from "./lib/decision";
 
 // Change in frontend/.env (VITE_API_URL) if your backend runs elsewhere.
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+const BASE = (
+  import.meta.env.VITE_API_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
+
 
 async function request(path, options) {
   let res;
